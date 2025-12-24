@@ -1,5 +1,13 @@
 [
     {
+        "id": "1",
+        "title": "XGBoost: A Love Letter to Tabular Data",
+        "date": "2025-12-24",
+        "tags": ["ai", "ml"],
+        "excerpt": "XGBoost is the beast of modeling in my industry, so let's dig into how it works.",
+        "content": "TBD"
+    },
+    {
         "id": "welcome-to-the-lab",
         "title": "Welcome to Chethan's Lab",
         "date": "2025-12-24",
