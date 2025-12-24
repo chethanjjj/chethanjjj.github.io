@@ -1,11 +1,11 @@
 [
     {
-        "id": "1",
+        "id": "xgboost-love-letter-tabular-data",
         "title": "XGBoost: A Love Letter to Tabular Data",
         "date": "2025-12-24",
         "tags": ["ai", "ml"],
         "excerpt": "XGBoost is the beast of modeling in my industry, so let's dig into how it works.",
-        "content": "TBD"
+        "content": "# XGBoost: A Love Letter to Tabular Data\n\n*Coming soon...*\n\nXGBoost is the beast of modeling in my industry, so let's dig into how it works."
     },
     {
         "id": "welcome-to-the-lab",
