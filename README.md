@@ -1,6 +1,6 @@
 # Chethan's Lab - ML & AI Blog
 
-A simple, elegant blog for sharing machine learning and AI-related posts, experiments, and notes.
+A simple, elegant blog (https://chethanjjj.github.io/lab/) for sharing machine learning and AI-related posts, experiments, and notes.
 
 ## How to Add a New Post
 
