@@ -4,13 +4,21 @@ let posts = [];
 // Load posts from JSON file
 async function loadPosts() {
     try {
-        const response = await fetch('posts.json');
+        // Use absolute path for GitHub Pages compatibility
+        const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+        const jsonPath = basePath ? `${basePath}/posts.json` : 'posts.json';
+        const response = await fetch(jsonPath);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         posts = await response.json();
         initBlog();
     } catch (error) {
         console.error('Error loading posts:', error);
         document.getElementById('blogPosts').innerHTML = 
-            '<p>Error loading posts. Please check that posts.json exists.</p>';
+            '<p>Error loading posts. Please check that posts.json exists and that GitHub Pages has finished building.</p>';
     }
 }
 
