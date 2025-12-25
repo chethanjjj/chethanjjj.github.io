@@ -12,13 +12,28 @@
         <div class="container">
             <h1 class="logo">Chethan's Lab</h1>
             <p class="tagline">Notes on applied machine learning and systems</p>
+            <nav class="main-nav">
+                <a href="#" class="nav-link" data-page="about">About</a>
+                <a href="#" class="nav-link active" data-page="blog">Blog</a>
+                <a href="https://scholar.google.com/citations?hl=en&user=p5hIz8AAAAAJ" class="nav-link" target="_blank" rel="noopener noreferrer">Publications</a>
+            </nav>
         </div>
     </header>
 
     <main class="main-content">
         <div class="container">
-            <div class="blog-posts" id="blogPosts">
-                <!-- Blog posts will be loaded here dynamically -->
+            <!-- Blog Page -->
+            <div id="blog-page" class="page active">
+                <div class="blog-posts" id="blogPosts">
+                    <!-- Blog posts will be loaded here dynamically -->
+                </div>
+            </div>
+
+            <!-- About Page -->
+            <div id="about-page" class="page">
+                <div class="page-content" id="aboutContent">
+                    <!-- About content will be loaded here -->
+                </div>
             </div>
         </div>
     </main>

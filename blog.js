@@ -14,11 +14,18 @@ async function loadPosts() {
         }
         
         posts = await response.json();
+        
+        // Initialize blog and navigation
         initBlog();
     } catch (error) {
         console.error('Error loading posts:', error);
-        document.getElementById('blogPosts').innerHTML = 
-            '<p>Error loading posts. Please check that posts.json exists and that GitHub Pages has finished building.</p>';
+        const blogPostsContainer = document.getElementById('blogPosts');
+        if (blogPostsContainer) {
+            blogPostsContainer.innerHTML = 
+                '<p>Error loading posts. Please check that posts.json exists and that GitHub Pages has finished building.</p>';
+        }
+        // Still initialize navigation and pages even if posts fail to load
+        initBlog();
     }
 }
 
@@ -47,40 +54,65 @@ function renderPostsList() {
     const sortedPosts = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     postsContainer.innerHTML = sortedPosts.map(post => `
-        <article class="post-card" onclick="window.location.href='?post=${post.id}'">
+        <article class="post-card" data-post-id="${post.id}">
             <div class="post-meta">
                 <span class="post-date">
                     📅 ${formatDate(post.date)}
                 </span>
             </div>
-            <h2><a href="?post=${post.id}">${post.title}</a></h2>
+            <h2><a href="?post=${post.id}" class="post-link" data-post-id="${post.id}">${post.title}</a></h2>
             <div class="post-tags">
                 ${post.tags.map(tag => `<span class="tag ${tag}">${tag}</span>`).join('')}
             </div>
             <p class="post-excerpt">${post.excerpt}</p>
-            <a href="?post=${post.id}" class="read-more">Read more</a>
+            <a href="?post=${post.id}" class="read-more post-link" data-post-id="${post.id}">Read more</a>
         </article>
     `).join('');
+
+    // Add event listeners for post cards
+    postsContainer.querySelectorAll('.post-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // Don't navigate if clicking on a link (let the link handle it)
+            if (e.target.tagName === 'A') return;
+            const postId = card.getAttribute('data-post-id');
+            renderPost(postId);
+            window.history.pushState({ post: postId }, '', `?post=${postId}`);
+        });
+    });
+
+    // Add event listeners for post links
+    postsContainer.querySelectorAll('.post-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const postId = link.getAttribute('data-post-id');
+            renderPost(postId);
+            window.history.pushState({ post: postId }, '', `?post=${postId}`);
+        });
+    });
 }
 
 // Function to render single post
 function renderPost(postId) {
     const post = posts.find(p => p.id === postId);
+    const postsContainer = document.getElementById('blogPosts');
     
     if (!post) {
-        document.getElementById('blogPosts').innerHTML = `
+        postsContainer.innerHTML = `
             <div class="post-content">
                 <h1>Post Not Found</h1>
                 <p>The post you're looking for doesn't exist.</p>
-                <a href="index.html" class="back-link">Back to home</a>
+                <a href="#" class="back-link" onclick="showPage('blog'); return false;">Back to all posts</a>
             </div>
         `;
         return;
     }
 
-    const mainContent = document.querySelector('.main-content .container');
-    mainContent.innerHTML = `
-        <a href="index.html" class="back-link">Back to all posts</a>
+    // Make sure we're on the blog page
+    showPage('blog');
+    
+    postsContainer.innerHTML = `
+        <a href="#" class="back-link" id="backToBlogLink">← Back to all posts</a>
         <article class="post-content">
             <div class="post-meta">
                 <span class="post-date">📅 ${formatDate(post.date)}</span>
@@ -94,6 +126,17 @@ function renderPost(postId) {
             </div>
         </article>
     `;
+
+    // Add event listener for back link
+    const backLink = document.getElementById('backToBlogLink');
+    if (backLink) {
+        backLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage('blog');
+            renderPostsList();
+            window.history.pushState({ page: 'blog' }, '', 'index.html');
+        });
+    }
 }
 
 // Simple markdown to HTML converter
@@ -158,15 +201,129 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Navigation handling
+function initNavigation() {
+    const navLinks = document.querySelectorAll('.nav-link[data-page]');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = link.getAttribute('data-page');
+            showPage(page);
+            
+            // Update URL without reload
+            const newUrl = page === 'blog' ? 'index.html' : `index.html?page=${page}`;
+            window.history.pushState({ page }, '', newUrl);
+        });
+    });
+
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', (e) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('post');
+        const page = postId ? 'blog' : (urlParams.get('page') || 'blog');
+        
+        if (postId) {
+            showPage('blog');
+            renderPost(postId);
+        } else {
+            showPage(page);
+        }
+    });
+}
+
+function showPage(pageName) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+
+    // Remove active class from all nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    // Show selected page
+    const targetPage = document.getElementById(`${pageName}-page`);
+    if (targetPage) {
+        targetPage.classList.add('active');
+    }
+
+    // Activate corresponding nav link
+    const activeLink = document.querySelector(`.nav-link[data-page="${pageName}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+
+    // Load page-specific content
+    if (pageName === 'blog') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('post');
+        if (postId) {
+            renderPost(postId);
+        } else {
+            renderPostsList();
+        }
+    } else if (pageName === 'about') {
+        loadAbout();
+    }
+}
+
+// Load about page content
+function loadAbout() {
+    const container = document.getElementById('aboutContent');
+    container.innerHTML = `
+        <div class="page-content">
+            <h1>About</h1>
+            
+            <div class="about-intro">
+                <div class="about-text">
+                    <p>Welcome to my corner of the internet! My name is Chethan Jujjavarapu! I'm passionate about applied machine learning and building AI systems. I am a Senior Data Scientist in the healthcare tech space with a PhD from University of Washington. My academic research focused 
+                    on how to leverage multiple data types to predict clinical conditions for patients using machine learning. Today I spend my time building models to predict at-risk patients in the healthcare space and am passionate about exploring what new innovations can be used to improve this and other spaces.</p>
+                </div>
+                <div class="about-image-container">
+                    <img src="images/IMG_2580.JPG" alt="Chethan Jujjavarapu" class="about-image">
+                </div>
+            </div>
+            
+            <h2>Research Interests</h2>
+            <ul>
+                <li>Applied Machine Learning</li>
+                <li>Deep Learning Systems</li>
+                <li>ML Infrastructure</li>
+                <li>AI Research</li>
+                <li>Healthcare</li>
+                <li>Motorsports</li>
+            </ul>
+            
+            <h2>Contact</h2>
+            <p>You can reach out to me through the following:</p>
+            <div class="contact-links">
+                <a href="https://github.com/chethanjjj" target="_blank" rel="noopener noreferrer" class="contact-link">
+                    GitHub
+                </a>
+                <a href="https://www.linkedin.com/in/chethanjjj/" target="_blank" rel="noopener noreferrer" class="contact-link">
+                    LinkedIn
+                </a>
+            </div>
+        </div>
+    `;
+}
+
 // Initialize blog
 function initBlog() {
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('post');
+    const page = postId ? 'blog' : (urlParams.get('page') || 'blog');
     
+    // Initialize navigation first
+    initNavigation();
+    
+    // Show the appropriate page
     if (postId) {
+        showPage('blog');
         renderPost(postId);
     } else {
-        renderPostsList();
+        showPage(page);
     }
 }
 
