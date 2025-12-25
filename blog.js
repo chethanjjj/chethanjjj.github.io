@@ -292,7 +292,7 @@ function loadAbout() {
             
             <div class="about-intro">
                 <div class="about-text">
-                    <p>Welcome to my corner of the internet. I'm Chethan Jujjavarapu, a Senior Data Scientist in the healthcare technology space with a PhD from the University of Washington. I specialize in applied machine learning and the design of scalable AI systems. My academic research focused on leveraging multimodal data to predict clinical conditions using machine learning. Today, I work on developing and deploying models that identify at-risk patients and support data-driven decision-making in healthcare. I’m particularly interested in applying emerging machine learning techniques to build robust, real-world systems that meaningfully improve patient outcomes.</p>
+                    <p>Welcome to my corner of the internet! I'm Chethan Jujjavarapu, a Senior Data Scientist in the healthcare technology space with a PhD from the University of Washington. I specialize in applied machine learning and the design of scalable AI systems. My academic research focused on leveraging multimodal data to predict clinical conditions using machine learning. Today, I work on developing and deploying models that identify at-risk patients and support data-driven decision-making in healthcare. I’m particularly interested in applying emerging machine learning techniques to build robust, real-world systems that meaningfully improve patient outcomes.</p>
                 </div>
                 <div class="about-image-container">
                     <img src="images/IMG_2580.JPG" alt="Chethan Jujjavarapu" class="about-image">
