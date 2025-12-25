@@ -132,9 +132,24 @@ function renderPost(postId) {
     if (backLink) {
         backLink.addEventListener('click', (e) => {
             e.preventDefault();
-            showPage('blog');
+            e.stopPropagation();
+            
+            // Update URL to remove post parameter
+            const baseUrl = window.location.pathname.split('?')[0];
+            const cleanUrl = baseUrl.endsWith('index.html') || baseUrl.endsWith('/') ? 'index.html' : 'index.html';
+            window.history.pushState({ page: 'blog' }, '', cleanUrl);
+            
+            // Render the posts list
             renderPostsList();
-            window.history.pushState({ page: 'blog' }, '', 'index.html');
+            
+            // Update nav link active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            const blogNavLink = document.querySelector('.nav-link[data-page="blog"]');
+            if (blogNavLink) {
+                blogNavLink.classList.add('active');
+            }
         });
     }
 }
