@@ -500,6 +500,14 @@ body {
     color: var(--primary-hover);
 }
 
+[data-theme="dark"] .back-link {
+    color: var(--slate-blue);
+}
+
+[data-theme="dark"] .back-link:hover {
+    color: var(--deep-forest-green);
+}
+
 .back-link::before {
     content: '←';
 }
