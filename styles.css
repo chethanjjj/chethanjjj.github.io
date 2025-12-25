@@ -305,6 +305,7 @@ body {
 .tag.ai { background-color: #e0eef0; color: var(--slate-blue); }
 .tag.deep-learning { background-color: #f0f7e8; color: var(--mossy-green); }
 .tag.research { background-color: #f5ead4; color: var(--earthy-brown); }
+.tag.f1 { background-color: #fee2e2; color: #991b1b; }
 
 .post-excerpt {
     color: var(--text-secondary);
