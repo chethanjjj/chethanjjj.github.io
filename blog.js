@@ -310,7 +310,6 @@ function loadAbout() {
             </ul>
             
             <h2>Contact</h2>
-            <p>You can reach out to me through the following:</p>
             <div class="contact-links">
                 <a href="https://github.com/chethanjjj" target="_blank" rel="noopener noreferrer" class="contact-link">
                     GitHub
