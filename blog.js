@@ -340,10 +340,34 @@ function initBlog() {
     }
 }
 
+// Dark mode functionality
+function initDarkMode() {
+    // Check for saved theme preference or default to light mode
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    // Update toggle button icon
+    const toggle = document.getElementById('darkModeToggle');
+    if (toggle) {
+        toggle.querySelector('.toggle-icon').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        toggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            toggle.querySelector('.toggle-icon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+    }
+}
+
 // Run when DOM is loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadPosts);
+    document.addEventListener('DOMContentLoaded', () => {
+        initDarkMode();
+        loadPosts();
+    });
 } else {
+    initDarkMode();
     loadPosts();
 }
 
