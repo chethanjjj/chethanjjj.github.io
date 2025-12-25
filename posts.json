@@ -1,6 +1,6 @@
 [    {
         "id": "formula-1-1",
-        "title": "Predicting the F1 Winner: Just Check if Max is on the Grid 🤷🏾‍♂️",
+        "title": "Predicting the Formula 1 Winner: Just Check if Max is on the Grid 🤷🏾‍♂️",
         "date": "2025-12-24",
         "tags": ["experiment"],
         "excerpt": "Aren't you curious too?!",
@@ -12,7 +12,7 @@
         "date": "2025-12-24",
         "tags": ["lecture"],
         "excerpt": "XGBoost is the beast of modeling in my industry, so let's dig into how it works.",
-        "content": "let's dig into how it works. Coming soon."
+        "content": "Coming soon."
     },
     {
         "id": "welcome-to-the-lab",

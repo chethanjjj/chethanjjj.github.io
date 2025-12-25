@@ -301,10 +301,8 @@ function loadAbout() {
             
             <h2>Research Interests</h2>
             <ul>
-                <li>Applied Machine Learning</li>
-                <li>Deep Learning Systems</li>
-                <li>ML Infrastructure</li>
-                <li>AI Research</li>
+                <li>Applied AI</li>
+                <li>AI Infrastructure</li>
                 <li>Healthcare</li>
                 <li>Motorsports</li>
             </ul>
