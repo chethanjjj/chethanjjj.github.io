@@ -1,10 +1,10 @@
-# Chethan's Lab - ML & AI Blog
+# Chethan Jujjavarapu's AI Lab
 
 A simple, elegant blog for sharing machine learning and AI-related posts, experiments, and notes.
 
 ## How to Add a New Post
 
-### Option 1: Using Markdown Files (Recommended)
+### Using Markdown Files
 
 1. Create a new markdown file in the `posts/` folder (e.g., `my-post.md`)
 2. Write your post content in markdown format (no need for escaped newlines!)
@@ -20,23 +20,6 @@ A simple, elegant blog for sharing machine learning and AI-related posts, experi
     "file": "my-post.md"
 }
 ```
-
-### Option 2: Inline Content (Legacy)
-
-You can still use inline content if you prefer:
-
-```json
-{
-    "id": "unique-post-id",
-    "title": "Your Post Title",
-    "date": "YYYY-MM-DD",
-    "tags": ["ml", "ai", "deep-learning"],
-    "excerpt": "A short description that appears on the homepage",
-    "content": "# Your Post Title\n\nYour full post content in markdown format..."
-}
-```
-
-**Note:** Using markdown files is recommended as it's much easier to write and maintain longer posts!
 
 ### Post Fields Explained
 
