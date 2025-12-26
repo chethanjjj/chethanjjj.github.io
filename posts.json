@@ -1,4 +1,13 @@
-[    {
+[
+    {
+        "id": "bert-paper-review",
+        "title": "BERT Paper Review",
+        "date": "2025-12-25",
+        "tags": ["review"],
+        "excerpt": "Reviewing the original BERT paper.",
+        "file": "bert-paper-review.md"
+    },
+    {
         "id": "formula-1-1",
         "title": "Predicting the Formula 1 Winner: Just Check if Max is on the Grid 🤷🏾‍♂️",
         "date": "2025-12-24",
