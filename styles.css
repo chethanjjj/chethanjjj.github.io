@@ -32,8 +32,8 @@
     /* Dark mode PNW-inspired colors */
     --primary-color: #92B070;
     --primary-hover: #B6864B;
-    --text-primary: #e2e8e2;
-    --text-secondary: #a0a8a0;
+    --text-primary: #f5f5f5;
+    --text-secondary: #d0d0d0;
     --bg-primary: #1a241a;
     --bg-secondary: #0f1610;
     --border-color: #2d3e2d;
@@ -520,6 +520,12 @@ body {
     text-align: center;
     color: var(--muted-gray);
     font-size: 0.875rem;
+}
+
+[data-theme="dark"] .footer {
+    background: #0a0a0a;
+    color: var(--text-secondary);
+    border-top-color: var(--border-color);
 }
 
 /* Responsive Design */
