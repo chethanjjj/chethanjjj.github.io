@@ -92,8 +92,26 @@ function renderPostsList() {
     });
 }
 
+// Function to load markdown content from file
+async function loadMarkdownFile(filename) {
+    try {
+        const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+        const filePath = basePath ? `${basePath}/posts/${filename}` : `posts/${filename}`;
+        const response = await fetch(filePath);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load markdown file: ${response.status}`);
+        }
+        
+        return await response.text();
+    } catch (error) {
+        console.error('Error loading markdown file:', error);
+        return '<p>Error loading post content. Please check that the markdown file exists.</p>';
+    }
+}
+
 // Function to render single post
-function renderPost(postId) {
+async function renderPost(postId) {
     const post = posts.find(p => p.id === postId);
     const postsContainer = document.getElementById('blogPosts');
     
@@ -111,6 +129,18 @@ function renderPost(postId) {
     // Make sure we're on the blog page
     showPage('blog');
     
+    // Load content - either from file or use inline content
+    let content = '';
+    if (post.file) {
+        // Load from markdown file
+        content = await loadMarkdownFile(post.file);
+    } else if (post.content) {
+        // Use inline content (backward compatibility)
+        content = post.content;
+    } else {
+        content = '<p>No content available.</p>';
+    }
+    
     postsContainer.innerHTML = `
         <a href="#" class="back-link" id="backToBlogLink">← Back to all posts</a>
         <article class="post-content">
@@ -122,7 +152,7 @@ function renderPost(postId) {
                 ${post.tags.map(tag => `<span class="tag ${tag}">${tag}</span>`).join('')}
             </div>
             <div class="post-body">
-                ${markdownToHTML(post.content)}
+                ${markdownToHTML(content)}
             </div>
         </article>
     `;

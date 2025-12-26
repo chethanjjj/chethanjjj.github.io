@@ -4,7 +4,7 @@
         "date": "2025-12-24",
         "tags": ["experiment"],
         "excerpt": "Aren't you curious too?!",
-        "content": "Coming soon."
+        "file": "formula-1-1.md"
     },
     {
         "id": "xgboost-love-letter-tabular-data",
@@ -12,7 +12,7 @@
         "date": "2025-12-24",
         "tags": ["lecture"],
         "excerpt": "XGBoost is the beast of modeling in my industry, so let's dig into how it works.",
-        "content": "Coming soon."
+        "file": "xgboost-love-letter-tabular-data.md"
     },
     {
         "id": "welcome-to-the-lab",
@@ -20,7 +20,7 @@
         "date": "2025-12-24",
         "tags": ["introduction"],
         "excerpt": "Welcome to my blog (i.e., lab - no grants required 😉) where I share notes, experiments, and insights about machine learning and AI systems.",
-        "content": "This is my personal blog where I'll be sharing my thoughts, experiments, and learnings about machine learning and artificial intelligence.\n\n## What to Expect\n\n- **Applied ML**: Real-world applications and case studies\n- **Experiments**: Code experiments and their results\n- **Systems**: Deep dives into ML systems and infrastructure\n- **Research**: Notes on interesting papers and techniques\n\nStay tuned for more content!"
+        "file": "welcome-to-the-lab.md"
     }
 ]
 

@@ -4,9 +4,26 @@ A simple, elegant blog for sharing machine learning and AI-related posts, experi
 
 ## How to Add a New Post
 
-1. Open `posts.json` in your editor
-2. Add a new post object to the array (make sure to add a comma after the previous post)
-3. Each post should have the following structure:
+### Option 1: Using Markdown Files (Recommended)
+
+1. Create a new markdown file in the `posts/` folder (e.g., `my-post.md`)
+2. Write your post content in markdown format (no need for escaped newlines!)
+3. Open `posts.json` and add a new post object:
+
+```json
+{
+    "id": "unique-post-id",
+    "title": "Your Post Title",
+    "date": "YYYY-MM-DD",
+    "tags": ["ml", "ai", "deep-learning"],
+    "excerpt": "A short description that appears on the homepage",
+    "file": "my-post.md"
+}
+```
+
+### Option 2: Inline Content (Legacy)
+
+You can still use inline content if you prefer:
 
 ```json
 {
@@ -18,6 +35,8 @@ A simple, elegant blog for sharing machine learning and AI-related posts, experi
     "content": "# Your Post Title\n\nYour full post content in markdown format..."
 }
 ```
+
+**Note:** Using markdown files is recommended as it's much easier to write and maintain longer posts!
 
 ### Post Fields Explained
 
@@ -85,7 +104,9 @@ This blog is designed to work with GitHub Pages. Just push your changes to the r
 ├── index.html          # Homepage
 ├── styles.css          # Blog styling
 ├── blog.js             # Blog functionality
-├── posts.json          # Blog posts data
+├── posts.json          # Blog posts metadata
+├── posts/              # Markdown files for blog posts
+│   └── *.md            # Individual post files
 └── README.md           # This file
 ```
 
