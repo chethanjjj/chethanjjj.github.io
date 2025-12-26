@@ -142,7 +142,7 @@ async function renderPost(postId) {
     }
     
     postsContainer.innerHTML = `
-        <a href="#" class="back-link" id="backToBlogLink">← Back to all posts</a>
+        <a href="#" class="back-link" id="backToBlogLink">Back to all posts</a>
         <article class="post-content">
             <div class="post-meta">
                 <span class="post-date">📅 ${formatDate(post.date)}</span>
