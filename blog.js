@@ -157,6 +157,11 @@ async function renderPost(postId) {
         </article>
     `;
 
+    // Render LaTeX (KaTeX auto-render), if available.
+    // This runs AFTER the post HTML is injected, so equations in markdown become formatted math.
+    const postBody = postsContainer.querySelector('.post-body');
+    renderLatexInElement(postBody);
+
     // Add event listener for back link
     const backLink = document.getElementById('backToBlogLink');
     if (backLink) {
@@ -182,6 +187,28 @@ async function renderPost(postId) {
             }
         });
     }
+}
+
+function renderLatexInElement(el, attempt = 0) {
+    if (!el) return;
+    // KaTeX auto-render exposes renderMathInElement on window.
+    if (typeof window.renderMathInElement !== 'function') {
+        // KaTeX scripts are loaded with `defer`; in case the user clicks quickly, retry briefly.
+        if (attempt < 20) setTimeout(() => renderLatexInElement(el, attempt + 1), 50);
+        return;
+    }
+
+    window.renderMathInElement(el, {
+        delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '\\[', right: '\\]', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false }
+        ],
+        // Don't try to render inside code.
+        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        throwOnError: false
+    });
 }
 
 // Simple markdown to HTML converter

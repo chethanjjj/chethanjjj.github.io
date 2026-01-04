@@ -485,6 +485,12 @@ body {
     font-style: italic;
 }
 
+/* KaTeX: allow long equations to scroll instead of overflowing */
+.post-content .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
 .back-link {
     display: inline-flex;
     align-items: center;
