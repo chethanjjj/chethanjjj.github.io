@@ -240,16 +240,11 @@ function markdownToHTML(markdown) {
     // Blockquotes
     html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
     
-    // Lists (unordered)
-    html = html.replace(/^- (.+)$/gim, '<li>$1</li>');
-    // Wrap consecutive list items in ul tags
-    html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => {
-        return '<ul>' + match + '</ul>';
-    });
-    
-    // Ordered lists
-    html = html.replace(/^\d+\. (.+)$/gim, '<li>$1</li>');
-    // This is a simplified approach - for better handling, you'd need more sophisticated parsing
+    // Lists (unordered + ordered), with indentation-based nesting.
+    // This fixes cases like:
+    // - item
+    //   - subitem
+    html = parseMarkdownLists(html);
     
     // Paragraphs (split by double newlines, but preserve HTML blocks)
     const paragraphs = html.split(/\n\n+/);
@@ -264,6 +259,113 @@ function markdownToHTML(markdown) {
     }).join('\n\n');
     
     return html;
+}
+
+function parseMarkdownLists(input) {
+    const lines = input.split('\n');
+    let out = '';
+
+    const stack = []; // { type: 'ul' | 'ol', indent: number }
+    let openLi = false;
+
+    const closeLi = () => {
+        if (openLi) {
+            out += '</li>\n';
+            openLi = false;
+        }
+    };
+
+    const closeListsToIndent = (targetIndent) => {
+        while (stack.length && stack[stack.length - 1].indent > targetIndent) {
+            closeLi();
+            out += `</${stack[stack.length - 1].type}>\n`;
+            stack.pop();
+        }
+    };
+
+    const ensureList = (type, indent) => {
+        if (!stack.length) {
+            out += `<${type}>\n`;
+            stack.push({ type, indent });
+            return;
+        }
+
+        const top = stack[stack.length - 1];
+
+        // Going deeper (nested list)
+        if (indent > top.indent) {
+            // Nested lists must live inside an open <li>
+            if (!openLi) {
+                out += '<li>\n';
+                openLi = true;
+            }
+            out += `<${type}>\n`;
+            stack.push({ type, indent });
+            return;
+        }
+
+        // Going back up
+        if (indent < top.indent) {
+            closeListsToIndent(indent);
+        }
+
+        // Same indent but different list type (rare): close and reopen.
+        const newTop = stack[stack.length - 1];
+        if (newTop && newTop.type !== type && newTop.indent === indent) {
+            closeLi();
+            out += `</${newTop.type}>\n<${type}>\n`;
+            stack[stack.length - 1] = { type, indent };
+        }
+    };
+
+    const unorderedRe = /^(\s*)[-*+]\s+(.+)$/;
+    const orderedRe = /^(\s*)\d+\.\s+(.+)$/;
+
+    for (const rawLine of lines) {
+        const line = rawLine.replace(/\t/g, '    '); // normalize tabs
+        const unordered = line.match(unorderedRe);
+        const ordered = line.match(orderedRe);
+
+        if (unordered || ordered) {
+            const [, indentStr, itemText] = unordered || ordered;
+            const indent = indentStr.length;
+            const type = unordered ? 'ul' : 'ol';
+
+            ensureList(type, indent);
+
+            // Same level: close previous item before opening the next.
+            if (openLi && stack.length && stack[stack.length - 1].indent === indent) {
+                closeLi();
+            }
+
+            // If we are deeper than current top after ensureList, we still want a new li.
+            out += `<li>${itemText.trim()}`;
+            openLi = true;
+            continue;
+        }
+
+        // If we're in a list and see a blank line, keep it (but don't break the list).
+        if (stack.length && line.trim() === '') {
+            out += '\n';
+            continue;
+        }
+
+        // Continuation lines within a list item (wrapped text). Append to current <li>.
+        if (stack.length) {
+            out += ` ${line.trim()}`;
+            continue;
+        }
+
+        out += `${rawLine}\n`;
+    }
+
+    // Close any remaining open tags
+    closeLi();
+    while (stack.length) {
+        out += `</${stack.pop().type}>\n`;
+    }
+
+    return out.trim();
 }
 
 // Helper function to escape HTML in code blocks
