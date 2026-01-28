@@ -265,57 +265,38 @@ function parseMarkdownLists(input) {
     const lines = input.split('\n');
     let out = '';
 
-    const stack = []; // { type: 'ul' | 'ol', indent: number }
-    let openLi = false;
+    // Each stack entry represents an open <ul>/<ol> at a given indent.
+    // liOpen tracks whether the current list level has an open <li>.
+    const stack = []; // { type: 'ul' | 'ol', indent: number, liOpen: boolean }
 
-    const closeLi = () => {
-        if (openLi) {
-            out += '</li>\n';
-            openLi = false;
-        }
-    };
-
-    const closeListsToIndent = (targetIndent) => {
-        while (stack.length && stack[stack.length - 1].indent > targetIndent) {
-            closeLi();
-            out += `</${stack[stack.length - 1].type}>\n`;
-            stack.pop();
-        }
-    };
-
-    const ensureList = (type, indent) => {
-        if (!stack.length) {
-            out += `<${type}>\n`;
-            stack.push({ type, indent });
-            return;
-        }
-
+    const closeTopLiIfOpen = () => {
+        if (!stack.length) return;
         const top = stack[stack.length - 1];
-
-        // Going deeper (nested list)
-        if (indent > top.indent) {
-            // Nested lists must live inside an open <li>
-            if (!openLi) {
-                out += '<li>\n';
-                openLi = true;
-            }
-            out += `<${type}>\n`;
-            stack.push({ type, indent });
-            return;
+        if (top.liOpen) {
+            out += '</li>\n';
+            top.liOpen = false;
         }
+    };
 
-        // Going back up
-        if (indent < top.indent) {
-            closeListsToIndent(indent);
+    const closeAllLists = () => {
+        while (stack.length) {
+            closeTopLiIfOpen();
+            const top = stack.pop();
+            out += `</${top.type}>\n`;
         }
+    };
 
-        // Same indent but different list type (rare): close and reopen.
-        const newTop = stack[stack.length - 1];
-        if (newTop && newTop.type !== type && newTop.indent === indent) {
-            closeLi();
-            out += `</${newTop.type}>\n<${type}>\n`;
-            stack[stack.length - 1] = { type, indent };
+    const closeListsUntilIndent = (targetIndent) => {
+        while (stack.length && stack[stack.length - 1].indent > targetIndent) {
+            closeTopLiIfOpen();
+            const top = stack.pop();
+            out += `</${top.type}>\n`;
         }
+    };
+
+    const openList = (type, indent) => {
+        out += `<${type}>\n`;
+        stack.push({ type, indent, liOpen: false });
     };
 
     const unorderedRe = /^(\s*)[-*+]\s+(.+)$/;
@@ -323,48 +304,82 @@ function parseMarkdownLists(input) {
 
     for (const rawLine of lines) {
         const line = rawLine.replace(/\t/g, '    '); // normalize tabs
+
         const unordered = line.match(unorderedRe);
         const ordered = line.match(orderedRe);
+        const isListItem = Boolean(unordered || ordered);
 
-        if (unordered || ordered) {
+        if (isListItem) {
             const [, indentStr, itemText] = unordered || ordered;
             const indent = indentStr.length;
             const type = unordered ? 'ul' : 'ol';
 
-            ensureList(type, indent);
+            if (!stack.length) {
+                openList(type, indent);
+            } else {
+                let top = stack[stack.length - 1];
 
-            // Same level: close previous item before opening the next.
-            if (openLi && stack.length && stack[stack.length - 1].indent === indent) {
-                closeLi();
+                if (indent > top.indent) {
+                    // Nest inside current <li> of the parent list.
+                    if (!top.liOpen) {
+                        out += '<li>';
+                        top.liOpen = true;
+                    }
+                    out += `\n<${type}>\n`;
+                    stack.push({ type, indent, liOpen: false });
+                    top = stack[stack.length - 1];
+                } else if (indent < top.indent) {
+                    closeListsUntilIndent(indent);
+                    if (!stack.length) {
+                        openList(type, indent);
+                    }
+                }
+
+                // Same indent: possibly switch list type.
+                if (stack.length) {
+                    top = stack[stack.length - 1];
+                    if (top.indent === indent && top.type !== type) {
+                        closeTopLiIfOpen();
+                        out += `</${top.type}>\n`;
+                        stack.pop();
+                        openList(type, indent);
+                    }
+                }
             }
 
-            // If we are deeper than current top after ensureList, we still want a new li.
+            // Start a new list item at the current level.
+            closeTopLiIfOpen();
             out += `<li>${itemText.trim()}`;
-            openLi = true;
+            stack[stack.length - 1].liOpen = true;
             continue;
         }
 
-        // If we're in a list and see a blank line, keep it (but don't break the list).
-        if (stack.length && line.trim() === '') {
-            out += '\n';
-            continue;
-        }
-
-        // Continuation lines within a list item (wrapped text). Append to current <li>.
+        // Non-list line handling
         if (stack.length) {
-            out += ` ${line.trim()}`;
-            continue;
+            // Blank line: end list blocks so new sections don't get glued into the last <li>.
+            if (line.trim() === '') {
+                closeAllLists();
+                out += '\n';
+                continue;
+            }
+
+            const leadingSpaces = (line.match(/^(\s*)/)?.[1] ?? '').length;
+            const currentIndent = stack[stack.length - 1].indent;
+
+            // Indented continuation line: treat as part of current list item.
+            if (leadingSpaces > currentIndent) {
+                out += ` ${line.trim()}`;
+                continue;
+            }
+
+            // New non-indented content: close lists before emitting.
+            closeAllLists();
         }
 
         out += `${rawLine}\n`;
     }
 
-    // Close any remaining open tags
-    closeLi();
-    while (stack.length) {
-        out += `</${stack.pop().type}>\n`;
-    }
-
+    closeAllLists();
     return out.trim();
 }
 
