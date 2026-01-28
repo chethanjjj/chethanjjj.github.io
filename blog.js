@@ -397,11 +397,12 @@ function initNavigation() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const page = link.getAttribute('data-page');
-            showPage(page);
-            
-            // Update URL without reload
+
+            // Update URL without reload (do this BEFORE showPage so blog doesn't re-open a ?post=... view)
             const newUrl = page === 'blog' ? 'index.html' : `index.html?page=${page}`;
             window.history.pushState({ page }, '', newUrl);
+
+            showPage(page);
         });
     });
 
