@@ -18,7 +18,7 @@
     {
         "id": "xgboost-love-letter-tabular-data",
         "title": "XGBoost — How It Actually Works",
-        "date": "2025-12-24",
+        "date": "2026-06-28",
         "tags": ["lecture"],
         "excerpt": "A deep dive into the math and procedure behind XGBoost — from the objective function all the way to leaf values, split scoring, and regularization.",
         "file": "05_xgboost.ipynb"
