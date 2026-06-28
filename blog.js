@@ -92,22 +92,55 @@ function renderPostsList() {
     });
 }
 
-// Function to load markdown content from file
+// Function to load file content from posts directory
 async function loadMarkdownFile(filename) {
     try {
         const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
         const filePath = basePath ? `${basePath}/posts/${filename}` : `posts/${filename}`;
         const response = await fetch(filePath);
-        
+
         if (!response.ok) {
-            throw new Error(`Failed to load markdown file: ${response.status}`);
+            throw new Error(`Failed to load file: ${response.status}`);
         }
-        
+
         return await response.text();
     } catch (error) {
-        console.error('Error loading markdown file:', error);
-        return '<p>Error loading post content. Please check that the markdown file exists.</p>';
+        console.error('Error loading file:', error);
+        return '<p>Error loading post content. Please check that the file exists.</p>';
     }
+}
+
+// Render a Jupyter notebook (nbformat 4) to HTML
+function notebookToHTML(jsonText) {
+    let nb;
+    try {
+        nb = JSON.parse(jsonText);
+    } catch (e) {
+        return '<p>Error parsing notebook JSON.</p>';
+    }
+
+    const cells = nb.cells || [];
+    return cells.map(cell => {
+        const source = Array.isArray(cell.source) ? cell.source.join('') : (cell.source || '');
+
+        if (cell.cell_type === 'markdown') {
+            return `<div class="nb-markdown">${markdownToHTML(source)}</div>`;
+        }
+
+        if (cell.cell_type === 'code') {
+            const codeHtml = `<div class="nb-cell"><pre class="nb-code"><code>${escapeHtml(source)}</code></pre>`;
+            const outputs = (cell.outputs || []).map(out => {
+                if (out.output_type === 'stream') {
+                    const text = Array.isArray(out.text) ? out.text.join('') : (out.text || '');
+                    return `<pre class="nb-output">${escapeHtml(text)}</pre>`;
+                }
+                return '';
+            }).join('');
+            return codeHtml + outputs + '</div>';
+        }
+
+        return '';
+    }).join('\n');
 }
 
 // Function to render single post
@@ -130,17 +163,19 @@ async function renderPost(postId) {
     showPage('blog');
     
     // Load content - either from file or use inline content
-    let content = '';
+    let rawContent = '';
+    let isNotebook = false;
     if (post.file) {
-        // Load from markdown file
-        content = await loadMarkdownFile(post.file);
+        rawContent = await loadMarkdownFile(post.file);
+        isNotebook = post.file.endsWith('.ipynb');
     } else if (post.content) {
-        // Use inline content (backward compatibility)
-        content = post.content;
+        rawContent = post.content;
     } else {
-        content = '<p>No content available.</p>';
+        rawContent = '<p>No content available.</p>';
     }
-    
+
+    const renderedContent = isNotebook ? notebookToHTML(rawContent) : markdownToHTML(rawContent);
+
     postsContainer.innerHTML = `
         <a href="#" class="back-link" id="backToBlogLink">Back to all posts</a>
         <article class="post-content">
@@ -152,7 +187,7 @@ async function renderPost(postId) {
                 ${post.tags.map(tag => `<span class="tag ${tag}">${tag}</span>`).join('')}
             </div>
             <div class="post-body">
-                ${markdownToHTML(content)}
+                ${renderedContent}
             </div>
         </article>
     `;

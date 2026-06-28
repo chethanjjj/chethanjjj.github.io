@@ -17,11 +17,11 @@
     },
     {
         "id": "xgboost-love-letter-tabular-data",
-        "title": "XGBoost: A Love Letter to Tabular Data",
+        "title": "XGBoost — How It Actually Works",
         "date": "2025-12-24",
         "tags": ["lecture"],
-        "excerpt": "XGBoost is the beast of modeling in my industry, so let's dig into how it works.",
-        "file": "xgboost-love-letter-tabular-data.md"
+        "excerpt": "A deep dive into the math and procedure behind XGBoost — from the objective function all the way to leaf values, split scoring, and regularization.",
+        "file": "05_xgboost.ipynb"
     },
     {
         "id": "welcome-to-the-lab",
