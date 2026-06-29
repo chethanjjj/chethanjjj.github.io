@@ -399,6 +399,8 @@ body {
     padding: 3rem;
     box-shadow: var(--shadow);
     margin-bottom: 2rem;
+    overflow-x: hidden;  /* prevent wide code/table children from busting the container */
+    min-width: 0;
 }
 
 .post-content h1 {
@@ -457,6 +459,9 @@ body {
     overflow-x: auto;
     margin-bottom: 1.25rem;
     border-left: 4px solid var(--mossy-green);
+    width: 0;
+    min-width: 100%;
+    box-sizing: border-box;
 }
 
 [data-theme="dark"] .post-content pre {
@@ -558,6 +563,10 @@ body {
     border-left: 4px solid var(--mossy-green);
     margin: 0;
     overflow-x: auto;
+    /* Force pre to respect container width instead of expanding to fit content */
+    width: 0;
+    min-width: 100%;
+    box-sizing: border-box;
 }
 
 [data-theme="dark"] .nb-code {
@@ -576,6 +585,9 @@ body {
     font-size: 0.83em;
     overflow-x: auto;
     white-space: pre;
+    width: 0;
+    min-width: 100%;
+    box-sizing: border-box;
 }
 
 [data-theme="dark"] .nb-output {
