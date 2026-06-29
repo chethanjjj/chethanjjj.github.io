@@ -470,33 +470,94 @@ body {
     padding: 0;
 }
 
-/* Jupyter notebook cells */
+/* ── Jupyter notebook rendering ────────────────────────────────────────────── */
+
+/* Global run-all / restart toolbar */
+.nb-global-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 1.5rem;
+    background: #f0f5f0;
+    border-radius: 6px;
+    border: 1px solid #d0e0d0;
+}
+
+[data-theme="dark"] .nb-global-toolbar {
+    background: #1a2a1a;
+    border-color: #2d4a2d;
+}
+
+.nb-run-all-btn {
+    padding: 0.3rem 0.9rem;
+    background: #2d5a27;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-family: inherit;
+}
+
+.nb-run-all-btn:hover { background: #3d7a37; }
+
+.nb-restart-btn {
+    padding: 0.3rem 0.9rem;
+    background: transparent;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-family: inherit;
+    color: inherit;
+}
+
+.nb-restart-btn:hover { background: rgba(0,0,0,0.05); }
+
+.nb-py-status {
+    font-size: 0.78rem;
+    color: #777;
+    margin-left: auto;
+    font-style: italic;
+}
+
+/* Individual code cell */
 .nb-cell {
     margin-bottom: 1.5rem;
 }
 
+.nb-cell-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    background: #1a2a1a;
+    border-radius: 6px 6px 0 0;
+}
+
+.nb-run-btn {
+    background: transparent;
+    border: 1px solid #4a7c59;
+    color: #7ec880;
+    padding: 0.1rem 0.55rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-family: inherit;
+    transition: background 0.12s;
+}
+
+.nb-run-btn:hover  { background: #4a7c59; color: #fff; }
+.nb-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .nb-code {
     background-color: #1e2d1e;
     color: #f0f7f7;
-    padding: 1.25rem 1.5rem;
-    border-radius: 6px 6px 0 0;
-    border-left: 4px solid var(--mossy-green);
-    margin-bottom: 0;
-    overflow-x: auto;
-}
-
-.nb-output {
-    background-color: #f5f5f0;
-    color: #333;
     padding: 1rem 1.5rem;
-    border-radius: 0 0 6px 6px;
-    border-left: 4px solid #ccc;
-    margin-top: 0;
-    margin-bottom: 0;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.85em;
+    border-radius: 0;                /* toolbar above, output below */
+    border-left: 4px solid var(--mossy-green);
+    margin: 0;
     overflow-x: auto;
-    white-space: pre;
 }
 
 [data-theme="dark"] .nb-code {
@@ -504,14 +565,71 @@ body {
     border-left-color: var(--soft-sky-blue);
 }
 
+.nb-output {
+    background-color: #f5f5f0;
+    color: #333;
+    padding: 0.85rem 1.5rem;
+    border-radius: 0 0 6px 6px;
+    border-left: 4px solid #ccc;
+    margin: 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.83em;
+    overflow-x: auto;
+    white-space: pre;
+}
+
 [data-theme="dark"] .nb-output {
-    background-color: #1a1a1a;
+    background-color: #141414;
     color: #ccc;
     border-left-color: #444;
 }
 
-.nb-markdown {
-    margin-bottom: 0.5rem;
+.nb-output.nb-error   { color: #d63333; border-left-color: #d63333; }
+.nb-output.nb-loading { color: #888; font-style: italic; }
+
+/* When the last output in a live div has a rounded bottom */
+.nb-live-output .nb-output:last-child { border-radius: 0 0 6px 6px; }
+
+/* Matplotlib plots */
+.nb-plot {
+    display: block;
+    max-width: 100%;
+    margin: 0.5rem 0;
+    border-radius: 4px;
+}
+
+.nb-markdown { margin-bottom: 0.25rem; }
+
+/* ── Markdown tables ─────────────────────────────────────────────────────────── */
+
+.post-body table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.25rem 0;
+    font-size: 0.88em;
+    overflow-x: auto;
+    display: block;
+}
+
+.post-body th, .post-body td {
+    border: 1px solid #ccc;
+    padding: 0.45rem 0.75rem;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.post-body th {
+    background: #e8f4e8;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .post-body th {
+    background: #2d3e2d;
+}
+
+[data-theme="dark"] .post-body td,
+[data-theme="dark"] .post-body th {
+    border-color: #3d4e3d;
 }
 
 .post-content img {

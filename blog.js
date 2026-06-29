@@ -110,7 +110,10 @@ async function loadMarkdownFile(filename) {
     }
 }
 
-// Render a Jupyter notebook (nbformat 4) to HTML
+// Global notebook cell storage (populated by notebookToHTML, used by runNotebookCell)
+window._notebookCells = [];
+
+// Render a Jupyter notebook (nbformat 4) to HTML with interactive Run buttons
 function notebookToHTML(jsonText) {
     let nb;
     try {
@@ -119,28 +122,60 @@ function notebookToHTML(jsonText) {
         return '<p>Error parsing notebook JSON.</p>';
     }
 
+    // Reset cell store for this notebook
+    window._notebookCells = [];
+
     const cells = nb.cells || [];
-    return cells.map(cell => {
+    let codeIndex = 0;
+    let firstCell = true;
+
+    const cellHtmls = cells.map(cell => {
         const source = Array.isArray(cell.source) ? cell.source.join('') : (cell.source || '');
 
         if (cell.cell_type === 'markdown') {
-            return `<div class="nb-markdown">${markdownToHTML(source)}</div>`;
+            let src = source;
+            if (firstCell) {
+                // Strip the leading h1 title — it duplicates the post header
+                src = src.replace(/^#\s+[^\n]+\n?/, '').replace(/^---\n?/, '').trimStart();
+            }
+            firstCell = false;
+            if (!src.trim()) return '';
+            return `<div class="nb-markdown">${markdownToHTML(src)}</div>`;
         }
 
         if (cell.cell_type === 'code') {
-            const codeHtml = `<div class="nb-cell"><pre class="nb-code"><code>${escapeHtml(source)}</code></pre>`;
-            const outputs = (cell.outputs || []).map(out => {
+            firstCell = false;
+            const idx = codeIndex++;
+            window._notebookCells[idx] = source;
+
+            const staticOutputHtml = (cell.outputs || []).map(out => {
                 if (out.output_type === 'stream') {
                     const text = Array.isArray(out.text) ? out.text.join('') : (out.text || '');
                     return `<pre class="nb-output">${escapeHtml(text)}</pre>`;
                 }
                 return '';
             }).join('');
-            return codeHtml + outputs + '</div>';
+
+            return `<div class="nb-cell">
+                <div class="nb-cell-toolbar">
+                    <button class="nb-run-btn" id="nb-run-${idx}" onclick="runNotebookCell(${idx})">▶ Run</button>
+                </div>
+                <pre class="nb-code"><code>${escapeHtml(source)}</code></pre>
+                <div class="nb-static-output" id="nb-static-${idx}">${staticOutputHtml}</div>
+                <div class="nb-live-output" id="nb-live-${idx}" style="display:none"></div>
+            </div>`;
         }
 
         return '';
-    }).join('\n');
+    }).filter(Boolean).join('\n');
+
+    const toolbar = `<div class="nb-global-toolbar">
+        <button class="nb-run-all-btn" onclick="runAllNotebookCells()">▶▶ Run All Cells</button>
+        <button class="nb-restart-btn" onclick="restartNotebook()">↺ Restart Kernel</button>
+        <span class="nb-py-status" id="nb-py-status">Python not started</span>
+    </div>`;
+
+    return toolbar + cellHtmls;
 }
 
 // Function to render single post
@@ -249,50 +284,57 @@ function renderLatexInElement(el, attempt = 0) {
 // Simple markdown to HTML converter
 function markdownToHTML(markdown) {
     let html = markdown;
-    
-    // Code blocks (process first to avoid processing code content)
+
+    // 1. Protect math blocks so bold/italic regex doesn't corrupt them.
+    //    Replace with placeholders, restore at the end.
+    const mathStore = [];
+    html = html.replace(/\$\$([\s\S]*?)\$\$/g, (m) => { mathStore.push(m); return `\x00MATH${mathStore.length - 1}\x00`; });
+    html = html.replace(/\$([^\$\n]+?)\$/g,     (m) => { mathStore.push(m); return `\x00MATH${mathStore.length - 1}\x00`; });
+
+    // 2. Code blocks (before other processing to protect their content)
     html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
         return `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
     });
-    
-    // Headers
+
+    // 3. Horizontal rules
+    html = html.replace(/^---+$/gm, '<hr>');
+
+    // 4. Tables (must come before list/paragraph processing)
+    html = parseMarkdownTables(html);
+
+    // 5. Headers
     html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
     html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
     html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-    
-    // Links (process before bold/italic to avoid conflicts)
+
+    // 6. Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    
-    // Bold (before italic to handle **bold** correctly)
+
+    // 7. Bold then italic
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    
-    // Italic (only if not part of bold)
-    html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
-    
-    // Inline code
+    html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+
+    // 8. Inline code
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    // Blockquotes
+
+    // 9. Blockquotes
     html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
-    
-    // Lists (unordered + ordered), with indentation-based nesting.
-    // This fixes cases like:
-    // - item
-    //   - subitem
+
+    // 10. Lists
     html = parseMarkdownLists(html);
-    
-    // Paragraphs (split by double newlines, but preserve HTML blocks)
+
+    // 11. Paragraphs
     const paragraphs = html.split(/\n\n+/);
     html = paragraphs.map(para => {
         para = para.trim();
         if (!para) return '';
-        // Don't wrap if it's already a block-level HTML element
-        if (/^<(h[1-6]|p|pre|ul|ol|blockquote|div)/i.test(para)) {
-            return para;
-        }
+        if (/^<(h[1-6]|p|pre|ul|ol|blockquote|div|hr|table)/i.test(para)) return para;
         return `<p>${para}</p>`;
     }).join('\n\n');
-    
+
+    // 12. Restore math placeholders
+    html = html.replace(/\x00MATH(\d+)\x00/g, (_, i) => mathStore[+i]);
+
     return html;
 }
 
@@ -416,6 +458,26 @@ function parseMarkdownLists(input) {
 
     closeAllLists();
     return out.trim();
+}
+
+// Markdown table parser
+function parseMarkdownTables(input) {
+    // Match: header row | separator row | one-or-more data rows
+    return input.replace(
+        /^(\|.+\|)\s*\n\|[-| :]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm,
+        (match, headerLine, bodyLines) => {
+            const headers = headerLine.replace(/^\||\|$/g, '').split('|').map(h => h.trim());
+            const headerHtml = headers.map(h => `<th>${h}</th>`).join('');
+
+            const rows = bodyLines.trim().split('\n').filter(r => r.trim());
+            const rowsHtml = rows.map(row => {
+                const cells = row.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+                return `<tr>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
+            }).join('');
+
+            return `<table><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+        }
+    );
 }
 
 // Helper function to escape HTML in code blocks
@@ -577,5 +639,169 @@ if (document.readyState === 'loading') {
 } else {
     initDarkMode();
     loadPosts();
+}
+
+// ─── Pyodide / interactive notebook runtime ───────────────────────────────────
+
+let _pyodideInstance = null;
+let _pyodideLoadPromise = null;
+
+function _setPyStatus(msg) {
+    const el = document.getElementById('nb-py-status');
+    if (el) el.textContent = msg;
+}
+
+async function _ensurePyodide() {
+    if (_pyodideInstance) return _pyodideInstance;
+    if (_pyodideLoadPromise) return _pyodideLoadPromise;
+
+    _pyodideLoadPromise = (async () => {
+        _setPyStatus('Loading Python runtime…');
+
+        // Dynamically load pyodide.js the first time
+        if (typeof loadPyodide === 'undefined') {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Failed to load Pyodide'));
+                document.head.appendChild(s);
+            });
+        }
+
+        const py = await loadPyodide();
+        _setPyStatus('Loading packages…');
+        await py.loadPackage(['numpy', 'pandas', 'matplotlib', 'micropip']);
+
+        _setPyStatus('Installing scikit-learn…');
+        try {
+            await py.runPythonAsync(`import micropip; await micropip.install(['scikit-learn'])`);
+        } catch (e) { console.warn('scikit-learn install failed:', e); }
+
+        _setPyStatus('Installing xgboost…');
+        try {
+            await py.runPythonAsync(`import micropip; await micropip.install(['xgboost'])`);
+        } catch (e) { console.warn('xgboost install failed:', e); }
+
+        // Set up stdout capture and matplotlib non-interactive backend
+        await py.runPythonAsync(`
+import sys, io, base64
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+class _Capture:
+    def __init__(self): self.value = ''
+    def write(self, s): self.value += str(s)
+    def flush(self): pass
+
+_capture = _Capture()
+sys.stdout = _capture
+sys.stderr = _capture
+
+def _plt_show(*a, **kw):
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+    buf.seek(0)
+    img = base64.b64encode(buf.read()).decode()
+    plt.close('all')
+    _capture.value += f'__NBIMG__{img}__ENDIMG__'
+
+plt.show = _plt_show
+`);
+
+        _pyodideInstance = py;
+        _setPyStatus('Python ready');
+        return py;
+    })();
+
+    return _pyodideLoadPromise;
+}
+
+function _renderNotebookOutput(container, output) {
+    container.innerHTML = '';
+    if (!output.trim()) { container.style.display = 'none'; return; }
+    container.style.display = 'block';
+
+    output.split('__NBIMG__').forEach((part, i) => {
+        if (i === 0) {
+            if (part) {
+                const pre = document.createElement('pre');
+                pre.className = 'nb-output';
+                pre.textContent = part;
+                container.appendChild(pre);
+            }
+        } else {
+            const [imgData, rest] = part.split('__ENDIMG__');
+            if (imgData) {
+                const img = document.createElement('img');
+                img.src = `data:image/png;base64,${imgData}`;
+                img.className = 'nb-plot';
+                container.appendChild(img);
+            }
+            if (rest && rest.trim()) {
+                const pre = document.createElement('pre');
+                pre.className = 'nb-output';
+                pre.textContent = rest;
+                container.appendChild(pre);
+            }
+        }
+    });
+}
+
+async function runNotebookCell(idx) {
+    const btn       = document.getElementById(`nb-run-${idx}`);
+    const staticDiv = document.getElementById(`nb-static-${idx}`);
+    const liveDiv   = document.getElementById(`nb-live-${idx}`);
+    if (!btn || !liveDiv) return;
+
+    btn.disabled = true;
+    btn.textContent = '⌛';
+    liveDiv.style.display = 'block';
+    liveDiv.innerHTML = '<pre class="nb-output nb-loading">Starting Python runtime (first run takes ~30 s)…</pre>';
+    if (staticDiv) staticDiv.style.display = 'none';
+
+    try {
+        const py = await _ensurePyodide();
+        btn.textContent = '⌛ Running';
+        await py.runPythonAsync(`_capture.value = ''`);
+
+        try {
+            await py.runPythonAsync(window._notebookCells[idx] || '');
+        } catch (runErr) {
+            liveDiv.innerHTML = `<pre class="nb-output nb-error">${escapeHtml(runErr.message)}</pre>`;
+            btn.textContent = '▶ Run';
+            btn.disabled = false;
+            return;
+        }
+
+        const output = py.globals.get('_capture').value;
+        _renderNotebookOutput(liveDiv, output);
+    } catch (err) {
+        liveDiv.innerHTML = `<pre class="nb-output nb-error">${escapeHtml(err.message)}</pre>`;
+    }
+
+    btn.textContent = '▶ Run';
+    btn.disabled = false;
+}
+
+async function runAllNotebookCells() {
+    for (let i = 0; i < window._notebookCells.length; i++) {
+        await runNotebookCell(i);
+    }
+}
+
+function restartNotebook() {
+    _pyodideInstance = null;
+    _pyodideLoadPromise = null;
+    _setPyStatus('Python not started');
+    window._notebookCells.forEach((_, i) => {
+        const staticDiv = document.getElementById(`nb-static-${i}`);
+        const liveDiv   = document.getElementById(`nb-live-${i}`);
+        const btn       = document.getElementById(`nb-run-${i}`);
+        if (staticDiv) staticDiv.style.display = '';
+        if (liveDiv)   { liveDiv.style.display = 'none'; liveDiv.innerHTML = ''; }
+        if (btn)       { btn.textContent = '▶ Run'; btn.disabled = false; }
+    });
 }
 
